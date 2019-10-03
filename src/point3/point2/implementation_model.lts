@@ -1,34 +1,133 @@
-const Nthread = 3 // number of threads that share the object
-range Rthread = 1..Nthread
-const Nsem = 2 // number of semaphores
-range Rsem = 1..Nsem
-const Imax = 16 // a maximum value of the variable state
-range Int = 0..Imax
-set VarAlpha ={read[Int],write[Int],inc,dec}
-set Threads={t[i:Rthread]} //set of thread indentifiers
-set Sem={s[j:Rsem]} //set of condition indentifiers
-set SemOps = {acquire,release}
+// const Nthread = 2 // number of threads 
+// range Rthread = 1..Nthread
+// set Threads={t[i:Rthread]}
 
-SEMAPHORE(N=0) = SEMA[N], // N initial value
-SEMA[i:Int] = (release->SEMA[i+1]|when(i>0) acquire->SEMA[i-1]).
+const NthreadA = 2
+range RthreadA = 1..NthreadA
+set ThreadsA = {ta[RthreadA]}
+
+const NthreadB = 1
+range RthreadB = 1..NthreadB
+set ThreadsB = {tb[i:RthreadB]}
+
+const Nthread = NthreadA+NthreadB
+range Rthread = 1..Nthread
+set Threads = {ThreadsA,ThreadsB}
+
+const Ncond = 6 // number of condition variables
+const Imax = 16 // a maximum value of the variable state
+range Rcond = 1..Ncond
+range Int = 0..Imax //set of thread indentifiers
+set Cond={c[j:Rcond]} //set of condition indentifiers
+set SyncOps = {signal,signalAll,await,endawait}
+set LockOps = {acquire,release}
+set VarAlpha ={read[Int],write[Int],inc,dec}
+
+LOCK=(acquire->release->LOCK).
+
+COND = EMPTY,
+EMPTY = (await -> WAIT[1] | {signal,signalAll}->EMPTY ),
+WAIT[i:Rthread] =
+    ( when (i<Nthread) await -> WAIT[i+1]
+    | signal->endawait -> if(i==1)then EMPTY else WAIT[i-1]
+    | signalAll->LOOP[i]),
+LOOP[i:Rthread] =(endawait->if(i==1) then EMPTY else LOOP[i-1]).
+
+AWAIT(I=1)= (c[I].await -> release -> c[I].endawait ->acquire->END).
+SIGNAL(I=1)= (c[I].signal->END).
+SIGNALALL(I=1) = (c[I]. signalAll->END).
 
 INT(I=0)=VAR[I],
-VAR[v:Int]=(read[v] ->VAR[v] | write[w:Int]-> VAR[w]| inc-> VAR[v+1] | dec->VAR[v-1]).
+VAR[v:Int]=(read[v] ->VAR[v] | write[w:Int]-> VAR[w] | inc-> VAR[v+1] | dec->VAR[v-1]).
+// ----------------------------------------------
+CHECKANDSIGNALCONDREQUESTA = (state.read[v:Int]->
+    if(v==0 || v==3 || v==4 || v==11 || v==12) then SIGNALALL(1); END
+    else END).
+CHECKANDSIGNALCONDGETA = (state.read[v:Int]->
+    if (v==1 || v==9 || v==15 || v==16) then SIGNALALL(2);END
+    else END).
+CHECKANDSIGNALCONDRELEASEA = (state.read[v:Int]->
+    if(v>=3 && v<=6) then SIGNALALL(3);END
+    else END).
+CHECKANDSIGNALCONDREQUESTB = (state.read[v:Int]->
+    if (v==0 || v==3 || v==5) then SIGNALALL(4); END
+    else END).
+CHECKANDSIGNALCONDGETB = (state.read[v:Int]->
+    if (v==2 || v==8 || v==10) then SIGNALALL(5); END
+    else END).
+CHECKANDSIGNALCONDRELEASEB = (state.read[v:Int]->
+    if(v==11 || v==12 || v==13) then SIGNALALL(6);END
+    else END).
 
-REQUESTA = (mutex.acquire->WHILE1),
-WHILE1 = (state.read[v:Int]->if(v==1 || v==2 || (v>=5 && v<=10) || (v>=13 && v<=16)) then WAIT1;WHILE1 else NEXTREQUESTA[v];WHILE2 ),
-WAIT1 = (mutex.release->semReqA.acquire->mutex.acquire->END), 
-NEXTREQUESTA[v:Int] = 
-	( when(v==0) ->END
-	| when(v==3) state.write[5]->END
-	| when(v==4) state.write[6]->END
-	| when(v==11) state.write[12]->END
-	| when(v==12) state.write[13]->END),
+CHECKANDWAITREQUESTA = (state.read[v:Int]->
+    if(v==0) then (state.write[1]->END)
+    else if(v==3) then (state.write[5]->END)
+    else if(v==4) then (state.write[6]->END)
+    else if(v==11) then (state.write[12]->END)
+    else if(v==12) then (state.write[13]->END)
+    else AWAIT(1);CHECKANDWAITREQUESTA).
 
-WHILE2 = (state.read[v:Int]->if(v==0 || (v>=2 && v<=8) || (v>=10 && v<=14)) then WAIT2;WHILE2 else NEXTGETA[v];CONTINUE),
-NEXTGETA[v:Int] = 
-	( when(v==1) state.write[3]->END
-	| when(v==9) state.write[3]->END
-	| when(v==15) state.write[3]->END
-	| when(v==16) state.write[4]->END),
-CONTINUE = ()
+CHECKANDWAITGETA = (state.read[v:Int]->
+    if(v==1 || v==9 || v==15) then (state.write[3]->END)
+    else if(v==16) then (state.write[5]->END)
+    else AWAIT(2);CHECKANDWAITGETA).
+
+CHECKANDWAITRELEASEA = (state.read[v:Int]->
+    if(v==3) then (state.write[0]->END)
+    else if(v==4) then (state.write[8]->END)
+    else if(v==5) then (state.write[9]->END)
+    else if(v==6) then (state.write[10]->END)
+    else AWAIT(3);CHECKANDWAITRELEASEA).
+
+CHECKANDWAITREQUESTB = (state.read[v:Int]->
+    if(v==0) then (state.write[2]->END)
+    else if(v==3) then (state.write[4]->END)
+    else if(v==5) then (state.write[6]->END)
+    else AWAIT(4);CHECKANDWAITREQUESTB).
+
+CHECKANDWAITGETB = (state.read[v:Int]->
+    if(v==2 || v==8) then (state.write[11]->END)
+    else if(v==10) then (state.write[12]->END)
+    else AWAIT(5);CHECKANDWAITGETB).
+
+CHECKANDWAITRELEASEB = (state.read[v:Int]->
+    if(v==11) then (state.write[0]->END)
+    else if(v==12) then (state.write[15]->END)
+    else if(v==13) then (state.write[16]->END)
+    else AWAIT(6);CHECKANDWAITRELEASEB).
+
+CHECKANDSIGNAL = 
+    CHECKANDSIGNALCONDREQUESTA;
+    CHECKANDSIGNALCONDGETA;
+    CHECKANDSIGNALCONDRELEASEA;
+    CHECKANDSIGNALCONDREQUESTB;
+    CHECKANDSIGNALCONDGETB;
+    CHECKANDSIGNALCONDRELEASEB;
+    END.
+
+REQUESTA = (requestA->acquire->WHILE1),
+WHILE1 = CHECKANDWAITREQUESTA;WHILE2,
+WHILE2 = CHECKANDWAITGETA;CONTINUE,
+CONTINUE = CHECKANDSIGNAL;EXIT;END + {state.VarAlpha, c[Rcond].SyncOps}.
+
+RELEASEA = (releaseA->acquire->WHILE1),
+WHILE1 = CHECKANDWAITRELEASEA;CONTINUE,
+CONTINUE = CHECKANDSIGNAL;EXIT;END + {state.VarAlpha, c[Rcond].SyncOps}.
+
+REQUESTB = (requestB->acquire->WHILE1),
+WHILE1 = CHECKANDWAITREQUESTB;WHILE2,
+WHILE2 = CHECKANDWAITGETB;CONTINUE,
+CONTINUE = CHECKANDSIGNAL;EXIT;END + {state.VarAlpha, c[Rcond].SyncOps}.
+
+RELEASEB = (releaseB->acquire->WHILE1),
+WHILE1 = CHECKANDWAITRELEASEB;CONTINUE,
+CONTINUE = CHECKANDSIGNAL;EXIT;END + {state.VarAlpha, c[Rcond].SyncOps}.
+
+USE = (use->END).
+EXIT = (release->END).
+
+THREADA = REQUESTA;USE;RELEASEA;THREADA.
+THREADB = REQUESTB;USE;RELEASEB;THREADB.
+
+||SYS=(ThreadsA:THREADA  || ThreadsB:THREADB || Threads::LOCK || Threads::state:INT(0) || Threads::SAC).
+||SAC(C=Ncond) = (forall[i:1..C] c[i]:COND).
