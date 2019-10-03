@@ -1,0 +1,18 @@
+state label,state,requestA,getA,releaseA,requestB,getB,releaseB
+Free,0,1,-1,-1,2,-1,-1
+ContinueFreeA,1,-1,3,-1,-1,-1,-1
+ContinueFreeB,2,-1,-1,-1,-1,11,-1
+HeldByA.0.0,3,5,-1,0,4,-1,-1
+HeldByA.0.1,4,6,-1,8,-1,-1,-1
+HeldByA.1.0,5,-1,-1,9,6,-1,-1
+HeldByA.1.1,6,-1,-1,10,-1,-1,-1
+ContinueHeldByA.0.0,7,-1,-1,-1,-1,-1,-1
+ContinueHeldByA.0.1,8,-1,-1,-1,-1,11,-1
+ContinueHeldByA.1.0,9,-1,3,-1,-1,-1,-1
+ContinueHeldByA.1.1,10,-1,-1,-1,-1,12,-1
+HeldByB.0.0,11,12,-1,-1,-1,-1,0
+HeldByB.1.0,12,13,-1,-1,-1,-1,15
+HeldByB.2.0,13,-1,-1,-1,-1,-1,16
+ContinueHeldByB.0.0,14,-1,-1,-1,-1,-1,-1
+ContinueHeldByB.1.0,15,-1,3,-1,-1,-1,-1
+ContinueHeldByB.2.0,16,-1,4,-1,-1,-1,-1

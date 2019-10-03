@@ -1,0 +1,28 @@
+const NA=2
+const NB=1
+
+CLIENTA = (requestA->getA->use->releaseA->CLIENTA) + {requestB, getB, releaseB}.
+CLIENTB = (requestB->getB->use->releaseB->CLIENTB) + {requestA, getA, releaseA}.
+
+MONITOR = Free,
+Free = (requestA->ContinueFreeA | requestB->ContinueFreeB),
+ContinueFreeA = (getA->HeldByA[0][0]),
+ContinueFreeB = (getB->HeldByB[0][0]),
+HeldByA[i:0..NA-1][j:0..NB] = 
+	( when(i<NA-1) requestA->HeldByA[i+1][j]
+	| when(j<NB) requestB->HeldByA[i][j+1]
+	| when(i==0 && j==0) releaseA->Free
+	| when(i>0 || j>0) releaseA->ContinueHeldByA[i][j]),
+ContinueHeldByA[i:0..NA-1][j:0..Nb] = 
+	( when(i>0 && j==0) getA->HeldByA[i-1][j]
+	| when(i>=0 && j>0) getB->HeldByB[i][j-1]),
+HeldByB[i:0..NA][j:0..NB-1] = 
+	( when(i<NA) requestA->HeldByB[i+1][j]
+	| when(j<NB) requestB->HeldByB[i][j+1]
+	| when(i==0 && j==0) releaseB->Free
+	| when(i>0 || j>0) releaseB->ContinueHeldByB[i][j]),	
+ContinueHeldByB[i:0..NA][j:0..NB-1] =
+	( when(i>0 && j==0) getA->HeldByA[i-1][j]
+	| when(i>=0 && j>0) getB->HeldByB[i][j-1]).
+
+||SYS = ({a1,a2}:CLIENTA || {b1}:CLIENTB || {a1,a2,b1}::MONITOR).

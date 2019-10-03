@@ -1,0 +1,4 @@
+Name: JAR_NAME
+Specification-Title: SPEC_TITLE
+Implementation-Version: IMPL_VERSION
+Main-Class: MAIN_CLASS
