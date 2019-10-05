@@ -19,7 +19,7 @@ public class Testcase {
 			e.printStackTrace();
 		}
 		try {
-			executorService.awaitTermination(100, TimeUnit.SECONDS);
+			executorService.awaitTermination(5, TimeUnit.SECONDS);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

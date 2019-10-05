@@ -18,7 +18,7 @@ public class Manager {
 	public void requestA() {
 		lock.lock();
 		try {
-			if (isLocked) {
+			while (isLocked) {
 				waitingA++;
 				condA.await();
 			}
@@ -34,7 +34,7 @@ public class Manager {
 	public void requestB() {
 		lock.lock();
 		try {
-			if (isLocked) {
+			while (isLocked) {
 				waitingB++;
 				condB.await();
 			}
