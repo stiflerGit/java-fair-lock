@@ -19,7 +19,7 @@ public class Testcase {
 			e.printStackTrace();
 		}
 		try {
-			executorService.awaitTermination(10, TimeUnit.SECONDS);
+			executorService.awaitTermination(100, TimeUnit.SECONDS);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -46,15 +46,15 @@ class ThreadA extends Thread {
 
 	@Override
 	public void run() {
-		// try to get the resource
 		try {
-			System.out.printf("Thread %s requestA\n", ID);
+			System.out.printf("Thread %s requestingA\n", ID);
 			m.requestA();
 			System.out.printf("Thread %s getA\n", ID);
 			System.out.printf("Thread %s doing some work...\n", ID);
 			sleep(workTime);
+			System.out.printf("Thread %s releasingA\n", ID);
 			m.releaseA();
-			System.out.printf("Thread %s releaseA\n", ID);
+			System.out.printf("Thread %s releasedA\n", ID);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -77,13 +77,14 @@ class ThreadB extends Thread {
 	public void run() {
 		// try to get the resource
 		try {
-			System.out.printf("Thread %s requestB\n", ID);
+			System.out.printf("Thread %s requestingB\n", ID);
 			m.requestB();
 			System.out.printf("Thread %s getB\n", ID);
 			System.out.printf("Thread %s doing some work...\n", ID);
 			sleep(workTime);
+			System.out.printf("Thread %s releasingB\n", ID);
 			m.releaseB();
-			System.out.printf("Thread %s releaseB\n", ID);
+			System.out.printf("Thread %s releasedB\n", ID);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
